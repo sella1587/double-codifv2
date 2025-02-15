@@ -1,0 +1,827 @@
+{% extends 'base.html'%}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% block nvabar %}
+<!-- As a link -->
+<!-- Navbar -->
+ <style>
+    .cell:hover{
+      cursor: pointer;      
+    }
+    .testo{
+      width: 2px !important;
+    }
+    .valeurEngras{
+        font-size: medium;
+        font-weight: bolder;
+    }
+    td span .cell{
+      width: 100% !important;
+      table-layout: auto !important; 
+    }
+    
+    
+    .selected{
+      background-color: #005d81;
+    }
+    thead th{
+      background: #005d81!important;      
+      text-align: center! important; 
+      color: white;
+      width: 145px!important;  
+    }
+   input:invalid {
+    background-color: red;
+   }
+   .error_p{
+    color:red !important;
+   }   
+   
+    .unclickable{
+        pointer-events: none;
+    }
+    .selected {
+        background-color: #cce5ff !important; 
+        border: 2px solid #007bff !important;
+    }
+  
+   input:invalid{
+    background-color: red;
+   }
+   
+    .selected {
+        background-color: #cce5ff !important; /* Bleu clair background-color:  #005d81!important;*/
+        border: 2px solid #007bff !important;
+    }
+    /* Style du bouton filtre */
+.filter-btn {
+    background: #005d81;   
+    padding: 5px;
+    cursor: pointer;
+    color: whitesmoke;
+    font-style: initial;
+    font-size: 14px;
+    text-align: left;
+    width: 100%;
+}
+
+/* Style du menu contextuel */
+.filter-menu {
+    position: absolute;
+    background: white;    
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    width: 250px;  /* Ajuste la largeur */
+    z-index: 1;
+    display: none;
+    overflow: hidden;
+}
+
+/* Ajustement pour éviter le débordement */
+.filter-menu input {
+    width: calc(100% - 10px);
+    max-height: 150px;
+    margin: 5px 0;
+    padding: 5px;   
+    display: block;
+    font-size: 13px;
+}
+#tableconsolide tr:hover td{
+  background-color: #518ecf!important;
+}
+/* Conteneur des checkboxes */
+.checkbox-container {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 5px;
+    background: #f9f9f9;
+}
+
+/* Alignement correct des checkboxes */
+.checkbox-container label {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: black;
+    white-space: nowrap; /* Empêche le retour à la ligne */
+}
+
+/* Réinitialiser les filtres */
+.reset-filters-btn .apply-filters-btn {
+    background-color:  #005d81!important;
+    border: 1px solid #201e1e;
+    padding: 5px;
+    font-size: 13px;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+</style>
+<nav class="navbar navbar-expand-lg" style="background-color: #005d81">
+    <!-- Container wrapper -->
+    <div class="container-fluid">
+      <!-- Navbar brand -->
+      <a class="navbar-brand" href="#"><img src="{% static 'core/img/cdLogo.JPG' %}" alt="" width="100%" height="45"></a>
+      <a class="nav-link" href="{% url 'selectouvrage' %}" >
+        <div>
+          <span id="selectprj" class="badge rounded-pill badge-notification bg-info">{{ request.session.SelectedOuvrage | upper }}</span>
+          <img src="{% static 'core/img/home.png'%}"  width="25px" title="retour au menu"/>  
+        </div>              
+      </a>
+        <!-- Right links <button type="button" id="addrow">Ajouter une ligne</button> -->
+        <ul class="navbar-nav ms-auto d-flex flex-row mt-3 mt-lg-0">
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#">
+              <div>                
+                <img src="{% static 'core/img/reinitialize.png'%}"  width="25px" title="reinitialisé toutes les filtres"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!" id="validation">
+              <div>                
+                <img src="{% static 'core/img/applymodif.png'%}"  width="25px" title="validés les modifications" id="saveData"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!" id="addrow">
+              <div>                      
+                <img src="{% static 'core/img/add_line.png'%}" width="25px" title="Ajouter une ligne"/> 
+              </div>              
+            </a>
+          </li>
+          
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!">
+              <div>               
+                <img src="{% static 'core/img/refresh.png'%}"  width="25px" title="actualisé les données"/> 
+              </div>              
+            </a>
+          </li>
+
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!">
+              <div>              
+                <img src="{% static 'core/img/recycler.png'%}"  width="25px" title="Supprimer les lignes séléctionnées"/> 
+              </div>              
+            </a>
+          </li>
+        </ul>
+        <!-- Right links -->
+  
+        <!-- Search form -->
+        <!-- <form class="d-flex input-group w-auto ms-lg-3 my-3 my-lg-0">
+          <input type="search" class="form-control" placeholder="Search" aria-label="Search" />
+          <button class="btn btn-primary" type="button" data-mdb-ripple-init data-mdb-ripple-color="dark">
+            Search
+          </button>
+        </form> -->
+      </div>
+      <!-- Collapsible wrapper -->
+    </div>
+    <!-- Container wrapper -->
+  </nav>
+  <!-- Navbar -->
+ 
+{% endblock %}
+{% block content%}
+<br>
+
+<div id="tbodydiv">      
+    <table class="table table-hover table-striped" id="tableconsolide" width="100%">
+      <thead>      
+        <tr>
+          <th class="bd-highlight" id="id" data-column="id" style="width: 5px!important;">id</th>                 
+          <th id="name" data-column="name" data-type="text" data-group="text">Repère fonctionnel🔽</th>
+          <th id="source" data-column="source" data-type="text" data-group="text"> Source <span style="cursor: pointer;">🔽</span></th>
+          <th id="description" data-column="description" data-type="text" data-group="text">Description <span style="cursor: pointer;">🔽</span></th>
+          <th id="component_type" data-column="component_type" data-type="text" data-group="text">Type de composant <span style="cursor: pointer;">🔽</span></th>          
+          <th id="trade" data-column="trade" data-type="text" data-group="text">Métier <span style="cursor: pointer;">🔽</span></th>
+          <th id="function" data-column="function" data-type="text" data-group="text">Fonction <span style="cursor: pointer;">🔽</span></th>
+          <th id="lot" data-column="lot" data-type="text" data-group="text">Lot <span style="cursor: pointer;">🔽</span></th>
+          <th id="room" data-column="room" data-type="text" data-group="text">Local <span style="cursor: pointer;">🔽</span></th>          
+          <th id="code_client_object" data-column="code_client_object" data-type="text" data-group="text">** code_client_object ** <span style="cursor: pointer;">🔽</span></th>
+          <th id="code_fournisseur" data-column="code_fournisseur" data-type="fixe" data-group="fixed">Code fournisseur <span style="cursor: pointer;">🔽</span></th>
+          <th id="facteur_choc" data-column="facteur_choc" data-type="fixefacteur" data-group="fixed">Facteur de choc <span style="cursor: pointer;">🔽</span></th> 
+          <th id="degre_choc" data-column="degre_choc" data-type="fixedegre" data-group="fixed">Dégre choc <span style="cursor: pointer;">🔽</span></th>
+          <th id="avec_plots" data-column="avec_plots" data-type="fixeplots" data-group="fixed">Avec plots <span style="cursor: pointer;">🔽</span></th>               
+          <th id="avec_carlingage" data-column="avec_carlingage" data-type="fixecarlingage" data-group="fixed">Avec carlingage <span style="cursor: pointer;">🔽</span></th>
+          <th id="creation_date" data-column="creation_date" data-type="date" data-group="date">Date de création <span style="cursor: pointer;">🔽</span></th>
+          <th id="date_last_modified" data-column="date_last_modified" data-type="date" data-group="date">Date de modification <span style="cursor: pointer;">🔽</span></th>          
+        </tr>
+        </thead>
+    <tbody>      
+    </tbody>
+  </table>
+</div>
+{% endblock%}
+{% block script %}
+<script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/dataTables.fixedColumns.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/5.0.4/js/fixedColumns.dataTables.js"></script>
+<script>
+    
+    $(document).ready(function(){
+      /* fixed column*/
+    
+      /* end fixed column*/
+      let selectedCells = new Set();
+        
+      var tableDc = $('#tableconsolide').DataTable({
+          ordering: true,
+          processing: true,
+          serverSide: true,
+          paging: true,
+          searching: false,       
+          autoWidth: false,               
+          ajax: function(data, callback, settings) {
+            let filters = {};    
+            $('#tableconsolide thead th').each(function () {
+                let column = $(this).attr('data-column'); 
+                let filterMenu = $(this).find('.filter-menu');    
+                if (filterMenu.length > 0) {
+                    filters[column + "-search"] = filterMenu.find('.search-input').val() || "";
+                    filters[column + "-start-with"] = filterMenu.find('.start-with-input').val() || "";
+                    filters[column + "-end-with"] = filterMenu.find('.end-with-input').val() || "";
+                    filters[column + "-not-contain"] = filterMenu.find('.not-contain-input').val() || "";
+                    filters[column + "-not-start-with"] = filterMenu.find('.not-start-with-input').val() || "";
+                    filters[column + "-not-end-with"] = filterMenu.find('.not-end-with-input').val() || "";
+                    filters[column + "-checkbox"] = filterMenu.find('.form-check-input:checked').map(function () {
+                        return $(this).val();
+                    }).get();
+                }
+               
+            });
+            $.ajax({
+              url: "{% url 'GetConsolidate' %}",
+              type: "GET",
+              data: {
+                  draw: data.draw,
+                  start: data.start,
+                  length: data.length,
+                  order: data.order[0].column,
+                  dir: data.order[0].dir,
+                  ouvrage: "{{ request.session.SelectedOuvrage|safe }}",
+                  ...filters
+              },
+              success: function(response) {
+                
+                  callback(response);
+              }
+          });
+          },
+          "columns": [            
+                { "data": "id" },
+                { "data": "name" },
+                { "data": "source" },
+                { 
+                    "data": "description",
+                    "className": "",
+                    "width": "5px"
+                },
+                { "data": "component_type","className": "text-nowrap bd-highlight" },
+                { "data": "trade","className": "text-nowrap bd-highlight"  },
+                { "data": "function","className": "text-nowrap bd-highlight"  },
+                { "data": "lot" ,"className": "text-nowrap bd-highlight" },
+                { "data": "room","className": "text-nowrap bd-highlight"  },
+                {
+                  "data": "code_client_object", 
+                  "createdCell": function(td, cellData, rowData, row, col) {                
+                   var base = rowData.generate_data_config
+                   if (!base) return;
+                    var configValue = $.parseJSON(base);  
+                    if (typeof configValue === 'object') {
+                        configValue = JSON.stringify(configValue);
+                    }          
+                    $(td).addClass("cell text-nowrap bd-highlight").attr("data-config", configValue);
+                  }
+                },
+                { "data": "code_fournisseur","className": "text-nowrap bd-highlight"  },
+                { "data": "facteur_choc","className": "text-nowrap bd-highlight" ,"width": "75px" },
+                { "data": "degre_choc","className": "text-nowrap bd-highlight" },
+                { "data": "avec_plots","className": "text-nowrap bd-highlight" },
+                { "data": "avec_carlingage","className": "text-nowrap bd-highlight" },          
+                { "data": "creation_date" ,"className": "text-nowrap bd-highlight" },
+                { "data": "date_last_modified","className": "text-nowrap bd-highlight" }
+        ],
+        rowCallback: function(row, data) {         
+            $(row).find('.cell').on('dblclick', function() {              
+                let cell = $(this);                             
+                cell.removeClass("valeurEngras"); 
+                console.log(selectedCells);
+                if (selectedCells.size === 0) {                  
+                    selectedCells.add(this);
+                    $(this).addClass('selected');
+                }
+                console.log("[!]", cell)
+                selectedCells.forEach(cell => {
+                    let $cell  = $(cell);
+                    let configData = $cell.attr('data-config');
+                    if (!configData) return;                  
+                    let formulaire = ""; 
+                    try {   
+                      let config = JSON.parse(configData.replace(/&quot;/g, '"'));
+                      let formulaire = '';
+                      config.forEach(function(champ) {
+                            let valeurActuelle = champ.valueExist
+                            if (champ.typeinput === 'Regex') {
+                                let regex = new RegExp(champ.fieldvalue); 
+                                formulaire += `<input type="text" data-fieldorder="${champ.fieldorder}" 
+                                                class="form-inline input-cell" title="${champ.fieldlabel}"
+                                                value="${valeurActuelle}" pattern="${champ.fieldvalue}"
+                                                placeholder="${champ.fieldvalue}" data-flag="regex" style="width:50px"/> `;
+                            } else if (champ.typeinput === 'Fixe') {                
+                                formulaire += `<input type="text" data-fieldorder="${champ.fieldorder}" 
+                                                class="form-inline input-cell" title="${champ.fieldlabel}"
+                                                value="${champ.fieldvalue}" readonly data-flag ="text"
+                                                style="width:20px" disabled/> `;              
+                            } else if (champ.typeinput === 'select') {
+                                formulaire += `<select style="width:120px" data-flag="select" class='form-inline input-cell' title="${champ.fieldlabel}" data-fieldorder="${champ.fieldorder}">`;
+                                champ.options.forEach(function(option) {
+                                    const selected = option[0] === valeurActuelle ? 'selected' : '';
+                                    formulaire += `<option value="${option[0]}" ${selected}>${option[0]} - ${option[1]}</option>`;
+                                });
+                                formulaire += `</select> `;
+                            }
+                      
+                    });                   
+                    $cell.html(formulaire); 
+                    } catch (e) {
+                        console.error("Erreur lors de la lecture de data-config", e);
+                    }
+                });
+        
+            });
+        }
+        
+        ,
+          language: {
+            paginate: {
+                first: "Premier",
+                last: "Dernier",
+                next: "Suivant",
+                previous: "Précédent",
+            },
+            lengthMenu: 'Afficher _MENU_ par page',
+            info: "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+            infoEmpty: "Aucune entrée disponible",
+            emptyTable: "Aucune donnée consolidée"
+            },
+              initComplete: function () {
+              setupFilters(this.api());
+          }
+
+            
+      });        
+      
+/* on blur datatable */
+var dataUpdates = [];
+var idblur  
+$('#tableconsolide').on('blur', '.input-cell', function() {
+  console.log('event b');
+    var table = $('#tableconsolide').DataTable(); 
+    var selectedinput = $('.selected');      
+    idblur = setTimeout(function() {           
+      selectedinput.each(function() {
+            var cell = $(this);
+            var row = cell.closest('tr');  
+            var rowData = table.row(row).data();
+            let id = rowData ? rowData.id : null; 
+            var flag_pattern = []                  
+            var concatenated = cell.find('.input-cell').map(function(){
+                let ty =  $(this).attr('data-flag')
+                
+                if (ty === "regex"){
+                  pattern = $(this).attr('pattern');
+                  let regex = new RegExp(pattern);
+                  if (regex.test($(this).val().trim()) == false)
+                  {
+                      flag_pattern.push('e')
+                  } 
+                }
+                if (flag_pattern.includes('e')){
+                   cell.addClass('error_p');
+                }else{
+                  cell.removeClass('error_p')
+                }
+                console.log('dans event b ça donne : ', $(this).val().trim())
+                return $(this).val().trim();
+
+            }).get().join("");
+            if (concatenated)  
+            cell.html(concatenated);                          
+            var configData = cell.attr('data-config');  
+            if (!configData) {
+                console.warn("data-config manquant sur la cellule");
+                return;
+            }
+          
+            var parsedData;
+            try {
+                parsedData = JSON.parse(configData.replace(/&quot;/g, '"'));
+            } catch (e) {
+                console.error("Erreur de parsing JSON :", e);
+                return;
+            }   
+            dataUpdates.push({
+                objconso: id, 
+                ouvrage: "{{request.session.SelectedOuvrage|safe}}",
+                data: parsedData                  
+            });
+            if (dataUpdates.length > 0) {          
+
+            //Envoi AJAX des données en une seule requête
+            $.ajax({
+                url: "{% url 'insertOwnerCode' %}", 
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(dataUpdates), 
+                dataType: "json",             
+                error: function(xhr, status, error) {
+                    console.error("Erreur :", xhr.responseText);
+                    alert("Erreur lors de l'envoi des données !");
+                }
+            });
+        }
+            cell.addClass("valeurEngras");
+            cell.removeClass('selected');
+            selectedCells.clear()
+            
+                         
+        });  
+
+    }, 500);   
+    
+});
+
+/* end blur action*/
+    $('#tableconsolide').on('input change', '.input-cell', function() {
+      console.log("event A");
+        let newValue = $(this).val(); 
+        let fieldOrder = $(this).data('fieldorder');   
+          selectedCells.forEach(cell => {
+            let $cell = $(cell);
+            let configData = $cell.attr('data-config');                  
+            if (!configData) return;
+            try {
+                let configArray = JSON.parse(configData.replace(/&quot;/g, '"'));                              
+                let fieldToUpdate = configArray.find(field => field.fieldorder === fieldOrder);
+                if (fieldToUpdate) {
+                    fieldToUpdate.valueExist = newValue;                    
+                    $cell.attr('data-config', JSON.stringify(configArray).replace(/"/g, '&quot;'));                   
+                    let inputToUpdate = $cell.find(`.input-cell[data-fieldorder="${fieldOrder}"]`);
+                    if (inputToUpdate.length > 0) {
+                        inputToUpdate.val(newValue);                        
+                    }
+                }
+                
+            } catch (e) {
+                console.error("Erreur lors de la mise à jour des cellules sélectionnées", e);
+            }
+        });
+      
+        
+    });
+   
+    $('#tableconsolide').on('click', '.cell', function(event) {
+        let cell = this;
+
+        if (idblur !== undefined){          
+          clearTimeout(idblur);
+        };   
+        
+        if (event.ctrlKey || event.metaKey) { 
+           
+            if (!selectedCells.has(cell)){
+              $(cell).addClass('selected');
+              selectedCells.add(cell);
+            }else{
+              $(cell).removeClass('selected');
+              selectedCells.delete(cell);
+            }
+    
+        }else{          
+          $(cell).addClass('selected');
+          selectedCells.add(cell);
+                  
+          
+        }
+    });
+    $(document).click(function(event) {     
+        if (!$(event.target).closest('#tableconsolide').length) {
+            $('.cell').removeClass('selected');
+            selectedCells.clear();
+            
+        }
+    });
+
+    $("#addrow").on('click', function(e) {
+        e.preventDefault();
+        $(this).addClass('unclickable');      
+        tableDc.settings()[0].oFeatures.bServerSide = false;
+        $.ajax({
+            "url": "/api/addNewLigneConsolide?ouvrage=" + "{{ request.session.SelectedOuvrage|safe }}",
+            "type": "GET",           
+            dataType: 'json',
+            success: function(item){
+                    let val = typeof item === "string" ? JSON.parse(item) : item;                             
+                    let newRowData = { 
+                        id: val.id,                  
+                        name: val.name,
+                        source: val.source,
+                        description: val.description,
+                        component_type: val.component_type,
+                        trade: val.trade,
+                        function: val.function,
+                        lot: val.lot,
+                        room: val.room,
+                        code_client_object: val.code_client_object,
+                        code_fournisseur: val.code_fournisseur,
+                        facteur_choc: val.facteur_choc,
+                        degre_choc: val.degre_choc,
+                        avec_plots: val.avec_plots,
+                        avec_carlingage: val.avec_carlingage,
+                        creation_date: val.creation_date,
+                        date_last_modified: val.date_last_modified
+                    }                  
+                    let rowNode = tableDc.row.add(newRowData).draw().node()                  
+                    let tdCodeClient = $(rowNode).find("td:eq(9)");
+                    tdCodeClient.attr('class', 'cell text-nowrap bd-highlight');
+                    tdCodeClient.attr('data-config', JSON.stringify(val.generate_data_config));
+            },
+            error: function(error) {
+            console.error("Erreur lors de la récupération des données :", error);
+        }
+        });  
+    
+        setTimeout(() => {
+            tableDc.settings()[0].oFeatures.bServerSide = true;
+        }, 500);
+    });  
+    
+    function setupFilters(api) {
+    $('#tableconsolide thead th').each(function () {
+        let column = api.column($(this).index());
+        let columnName = $(this).text().trim();
+        let columnData = $(this).attr('data-column');
+        let columnType = $(this).attr('data-type');
+        let filterButton = $(`
+            <button class="btn filter-btn">
+                ${columnName} <i class="fa-solid fa-filter filter-icon" style="display: none; color: gray;"></i>
+            </button>`)
+
+      
+        $(this).html(filterButton);
+
+        let filterMenu = $('<div class="filter-menu shadow p-3 bg-white rounded"></div>').hide();
+
+        if (columnType === 'text') {
+            filterMenu.append(`
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control search-input" placeholder="Recherche..." aria-label="Recherche" aria-describedby="basic-addon2">
+                    <span class="input-group-text" id="basic-addon2">🔍</span>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input toggle-select" type="checkbox" id="toggle-select" checked style="width:25px; heigth:25px">
+                    <label class="form-check-label" for="toggle-select" style="font-size:xx-small">Tout sélectionner / désélectionner</label>
+                </div>
+                <br>
+                <div class="checkbox-container form-check mb-3"></div>
+                <input type="text" class="form-control start-with-input" placeholder="Commence par...">
+                <input type="text" class="form-control end-with-input" placeholder="Se termine par...">
+                <input type="text" class="form-control not-contain-input" placeholder="Ne contient pas...">
+                <input type="text" class="form-control not-start-with-input" placeholder="Ne commence pas par...">
+                <input type="text" class="form-control not-end-with-input" placeholder="Ne se termine pas par ...">
+            `);
+        } else if (columnType === 'date') {
+            filterMenu.append(`
+                <label>Date min:</label>
+                <input type="date" class="form-control min-date-input">
+                <label>Date max:</label>
+                <input type="date" class="form-control max-date-input">
+            `);
+        } else if (columnType === 'fixed') {
+            let selectBox = $('<select multiple class="form-control fixed-select"></select>');
+            column.data().unique().sort().each(function (d) {
+                selectBox.append(`<option value="${d}">${d}</option>`);
+            });
+            filterMenu.append(selectBox);
+        }
+
+        filterMenu.append(`
+            <button class="btn btn-info apply-filters-btn m-auto">Appliquer</button>
+            <button class="btn btn-success reset-filters-btn m-auto">Réinitialiser</button>
+        `);
+        
+        $(this).append(filterMenu);
+
+        if (columnType === 'text') {
+            column.data().unique().sort().each(function (d) {
+                let checkbox = $(`
+                    <div class="form-check">
+                        <input class="form-check-input filter-option" type="checkbox" value="${d}" id="check-${d}" checked style="width:25px; heigth:25px">
+                        <label class="form-check-label" for="check-${d}">&nbsp;${d}</label>
+                    </div>
+                `);
+                filterMenu.find('.checkbox-container').append(checkbox);
+            });
+        }
+
+        filterButton.on('click', function (e) {
+            $('.filter-menu').not(filterMenu).hide();
+            filterMenu.toggle();
+            e.stopPropagation();
+        });
+
+        $(document).on('click', function () {
+            filterMenu.hide();
+        });
+
+        filterMenu.on('click', function (e) {
+            e.stopPropagation();
+        });
+
+        filterMenu.find('.toggle-select').on('change', function () {
+            let isChecked = $(this).prop('checked');
+            filterMenu.find('.filter-option').prop('checked', isChecked);
+        });
+
+        filterMenu.find('.checkbox-container').on('change', '.filter-option', function () {
+            let allChecked = filterMenu.find('.filter-option').length === filterMenu.find('.filter-option:checked').length;
+            filterMenu.find('.toggle-select').prop('checked', allChecked);
+        });
+
+        filterMenu.find('.apply-filters-btn').on('click', function() {
+            applyFilters();
+            filterMenu.hide(); 
+        });
+
+        filterMenu.find('.reset-filters-btn').on('click', function() {
+            filterMenu.find('.form-control').val('');
+            filterMenu.find('.form-check-input').prop('checked', false);
+            column.search('').draw();
+            filterMenu.hide();
+            filterButton.find('.filter-icon').hide();
+        });
+
+        function applyFilters() {
+            let filterQuery = {};
+
+            if (columnType === 'text') {
+                let searchValue = filterMenu.find('.search-input').val();
+                let startWithValue = filterMenu.find('.start-with-input').val();
+                let notContainValue = filterMenu.find('.not-contain-input').val();
+                let notStartWithValue = filterMenu.find('.not-start-with-input').val();
+                let checkedValues = filterMenu.find('.filter-option:checked').map(function () { return $(this).val(); }).get();
+                
+                if (searchValue) filterQuery[columnData] = searchValue;
+                if (startWithValue) filterQuery[columnData] = "^" + startWithValue;
+                if (notStartWithValue) filterQuery[columnData] = "^(?!" + notStartWithValue + ")";
+                if (notContainValue) filterQuery[columnData] = "^(?!.*" + notContainValue + ").*$";
+                if (checkedValues.length > 0) filterQuery[columnData] = checkedValues;
+                let hasFilters = searchValue || startWithValue || notContainValue || notStartWithValue || checkedValues.length > 0
+
+            if (hasFilters) {
+                filterButton.find('.filter-icon').show();
+            } else {
+                filterButton.find('.filter-icon').hide();
+            }
+
+            } else if (columnType === 'date') {
+                let minDate = filterMenu.find('.min-date-input').val();
+                let maxDate = filterMenu.find('.max-date-input').val();
+                if (minDate) filterQuery[columnData] = ">=" + minDate;
+                if (maxDate) filterQuery[columnData] = "<=" + maxDate;
+            } else if (columnType === 'fixed') {
+                let selectedValues = filterMenu.find('.fixed-select').val();
+                if (selectedValues && selectedValues.length > 0) filterQuery[columnData] = selectedValues;
+            }
+
+            api.ajax.reload(null, false);
+        }
+    });
+}
+
+  
+ 
+  /* edidition*/ 
+let data_modifier = [];
+
+function makeColumnsEditable(editableColumns) {
+    $('#tableconsolide tbody').on('click', 'td', function (event) {
+        let cell = $(this);
+        let columnIdx = cell.index();
+        let columnData = $('#tableconsolide thead th').eq(columnIdx).attr('data-column');
+        let columnType = $('#tableconsolide thead th').eq(columnIdx).attr('data-type');
+        let rowId = cell.closest('tr').attr('data-id');
+
+        if (!editableColumns.includes(columnData)) return;        
+
+        if (event.ctrlKey || event.metaKey) {
+            if (selectedCells.has(cell[0])) {
+                selectedCells.delete(cell[0]);
+                cell.removeClass('selected');
+            } else {
+                selectedCells.add(cell[0]);
+                cell.addClass('selected');
+            }
+            return;
+        } else {
+            selectedCells.clear();
+            selectedCells.add(cell[0]);
+            $('.selected').removeClass('selected');
+        }
+    });
+
+    $('#tableconsolide tbody').on('dblclick', 'td', function () {
+       console.log('est ce compris ici aussi')
+        let cell = $(this);
+        let columnIdx = cell.index();
+        let columnData = $('#tableconsolide thead th').eq(columnIdx).attr('data-column');
+        let columnType = $('#tableconsolide thead th').eq(columnIdx).attr('data-type');
+
+        if (!editableColumns.includes(columnData)) return;
+        // ajouter un apel api qui recuperer les element des table facteur choc, degre choc, ....
+        let currentValue = cell.text().trim();
+        let inputElement = ""
+        if (columnType === 'fixefacteur'){
+            inputElement = `<select class="edit-input form-control">           
+                <option value=""></option>
+                <option value="K0">K0</option>
+                <option value="K1">K1</option>
+                <option value="K2">K2</option>
+                <option value="K3">K3</option>
+            </select>`
+        }
+        if (columnType === 'fixedegre'){
+            inputElement = `<select class="edit-input form-control">           
+                <option value=""></option>
+                <option value="D1">D1</option>
+                <option value="D2">D2</option>
+                <option value="D3">D3</option>              
+            </select>`;
+        }
+        if (columnType === 'fixeplots'){
+            inputElement = `<select class="edit-input form-control">           
+                <option value=""></option>
+                <option value="OUI">OUI</option>
+                <option value="NON">NON</option>                         
+            </select>`;
+        }
+        if (columnType === 'fixecarlingage'){
+            inputElement = `<select class="edit-input form-control">           
+                <option value=""></option>
+                <option value="OUI">OUI</option>
+                <option value="NON">NON</option>                         
+            </select>`;
+        }
+        if (columnType === 'fixe'){
+            inputElement =  `<input type="text" class="form-control edit-input" value="${currentValue}">`;
+        }       
+
+        cell.html(inputElement);
+        let input = cell.find('.edit-input');
+        input.focus();       
+        input.on('blur keydown', function (e) {
+            if (e.type === 'blur' || e.key === 'Enter') {
+                let newValue = $(this).val();
+                selectedCells.forEach(selectedCell => {
+                    let $selectedCell = $(selectedCell);
+                    let selectedRowId = $selectedCell.closest('tr').attr('data-id');
+                    $selectedCell.html(newValue);
+                    let existingRow = data_modifier.find(item => item.id === selectedRowId);
+                    if (existingRow) {
+                        existingRow.updatedcolumn[columnData] = newValue;
+                    } else {
+                        data_modifier.push({ "id": selectedRowId, "updatedcolumn": { [columnData]: newValue } });
+                    }
+                });
+                selectedCells.clear();
+                $('.selected').removeClass('selected');
+            }
+        });
+        
+    });
+}
+makeColumnsEditable(["facteur_choc", "degre_choc","avec_plots", "avec_carlingage"]); 
+
+  /* end edition */
+
+$('#saveData').on('click', function(){
+  alert('save data clicked');
+  console.log(data_modifier);
+})
+
+
+
+
+}); 
+    
+   
+           
+   
+</script>
+{% endblock%}

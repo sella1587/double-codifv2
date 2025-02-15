@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block nvabar %}
+<nav class="navbar navbar-expand-lg" style="background-color: #005d81">
+    <div class="container-fluid">      
+      <a class="navbar-brand" href="#"><img src="{% static 'core/img/cdLogo.JPG' %}" alt="" width="100%" height="45"></a>      
+    </div>    
+</nav>
+<style>
+    .card:hover{
+        background:  #005d81;
+    }
+    .fill {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden
+}
+.fill img {
+    flex-shrink: 0;
+    min-width: 100%;
+    min-height: 100%
+}
+</style>
+  <!-- Navbar {% csrf_token %}  -->  
+{% endblock %}
+{% block content %}
+<div class="container-fluid p-4">
+    <h4>List des ouvrages</h4>  
+    <div class='row row-cols-6 -g4'>
+        {% csrf_token %}
+        {% for ouvrage in listofOuvrage %}
+        <div class="col p-1" id="cardsOuvrage" label="coco">            
+            <div class="card h-100 text-black" style="border-radius: 25px; border-color: {{ ouvrage.color }}; border-width:5px; cursor: pointer;">               
+                <div class="fill"></div>        
+                <div class="card-body" id="{{ouvrage.ouvrage__type}}" data-droit = "{{ ouvrage.groupe__name}}">                    
+                    <div class="row">
+                        <div class="col-12 col-sm-8">
+                            <h5 class="card-title">{{ ouvrage.ouvrage__type }}</h5>
+                            <p class="card-text">{{ ouvrage.ouvrage__description}}</p> 
+                        </div>
+                        <div class="col-12 col-sm-4 fill">
+                            <img src="/{{ ouvrage.ouvrage__image }}" alt="{{ouvrage.ouvrage__image}}" height="95px">
+                        </div>
+                      </div>                    
+                </div>
+            </div>            
+        </div>
+        {% endfor %}
+    </div>    
+</div>
+{% endblock %}
+{% block script %}
+<script>
+    $(document).ready(function(){
+        $(".card-body").on('click', function(){           
+            var selected = $(this).attr('id')
+            var droit = $(this).data('droit')             
+            $.ajax({
+                type: "GET",
+                url: "{% url 'selectouvrage' %}",
+                data: {"ouvrage": selected, "droit": droit },
+                success: function(e){                       
+                    window.location.href = "{% url 'consolidationedit' %}";
+                }
+            })               
+        });
+    });
+</script>
+{% endblock %}

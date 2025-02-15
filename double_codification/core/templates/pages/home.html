@@ -1,0 +1,301 @@
+{% extends 'base.html'%}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% block nvabar %}
+<!-- As a link -->
+<!-- Navbar -->
+ <style>
+    .cell:hover{
+      cursor: pointer;      
+    }
+    .cell{
+      width: 100% !important;
+      table-layout: auto !important; 
+    }
+    #tableconsolide{
+        table-layout: auto !important;
+        width: 100% !important; 
+    }
+    .tbodydiv{
+      max-height: clamp(50em,100vh,350px);
+      overflow: auto;
+    }
+    .selected{
+      background-color: #005d81;
+    }
+    thead th{
+      background: #005d81!important;
+      color: white! important;
+      text-align: center! important;      
+    }
+   input:invalid{
+    background-color: red;
+   }
+ </style>
+ <!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<nav class="navbar navbar-expand-lg" style="background-color: #005d81">
+    <!-- Container wrapper -->
+    <div class="container-fluid">
+      <!-- Navbar brand -->
+      <a class="navbar-brand" href="#"><img src="{% static 'core/img/cdLogo.JPG' %}" alt="" width="100%" height="45"></a>
+      <a class="nav-link" href="{% url 'selectouvrage' %}" >
+        <div>
+          <i class="fas fa-bell fa-lg mb-1"></i>
+          <span id="selectprj" class="badge rounded-pill badge-notification bg-info">{{ request.session.SelectedOuvrage | upper }}</span>
+          <img src="{% static 'core/img/home.png'%}" height="40px" width="40px" title="retour au menu"/>  
+        </div>              
+      </a>
+        <!-- Right links <button type="button" id="addrow">Ajouter une ligne</button> -->
+        <ul class="navbar-nav ms-auto d-flex flex-row mt-3 mt-lg-0">
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!" id="addrow">
+              <div>
+                <i class="fas fa-bell fa-lg mb-1"></i>               
+                <img src="{% static 'core/img/add_line.png'%}" height="40px" width="40px" title="Ajouter une ligne"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#" id="initfilter" data-toggle="modal" data-target="#exampleModal">
+              <div>
+                <i class="fas fa-bell fa-lg mb-1"></i>
+                <img src="{% static 'core/img/reinitialize.png'%}" height="40px" width="40px" title="reinitialisé toutes les filtres"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!">
+              <div>
+                <i class="fas fa-globe-americas fa-lg mb-1"></i>
+                <img src="{% static 'core/img/refresh.png'%}" height="40px" width="40px" title="actualisé les données"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!">
+              <div>
+                <i class="fas fa-globe-americas fa-lg mb-1"></i>
+                <img src="{% static 'core/img/applymodif.png'%}" height="40px" width="40px" title="validés les modifications"/> 
+              </div>              
+            </a>
+          </li>
+          <li class="nav-item text-center mx-2 mx-lg-1">
+            <a class="nav-link" href="#!">
+              <div>
+                <i class="fas fa-globe-americas fa-lg mb-1"></i>
+                <img src="{% static 'core/img/recycler.png'%}" height="40px" width="40px" title="Supprimer les lignes séléctionnées"/> 
+              </div>              
+            </a>
+          </li>
+        </ul>
+        <!-- Right links -->
+  
+        <!-- Search form -->
+        <!-- <form class="d-flex input-group w-auto ms-lg-3 my-3 my-lg-0">
+          <input type="search" class="form-control" placeholder="Search" aria-label="Search" />
+          <button class="btn btn-primary" type="button" data-mdb-ripple-init data-mdb-ripple-color="dark">
+            Search
+          </button>
+        </form> -->
+      </div>
+      <!-- Collapsible wrapper -->
+    </div>
+    <!-- Container wrapper -->
+  </nav>
+  <!-- Navbar -->
+ 
+{% endblock %}
+{% block content%}
+<ul id="context-menu" class="dropdown-menu" style="display: none; position: absolute; width:7%; border:solid;">
+    <form method="get">
+      <button type="button" class='btn btn-block btn-danger text-xsmall'>Efface les filtre</button>       
+        {{ filtreform.form }}      
+      <button class='btn btn-block btn-sucess' type="submit">OK</button>       
+    </form>
+</ul>
+<br>
+<div class="tbodydiv">   
+    <!-- {% render_table tables_consolide %}   -->
+    <table class="table table-hover table-striped" id="tableconsolide" width="100%">
+      <thead class="sticky-top text-white">
+        <tr class="text-white">
+          <th class="text-nowrap bd-highlight" id="id" style="width: 5px;" class="text-center">id</th>                 
+          <th class="text-nowrap bd-highlight" id="name">Repère fonctionnel</th>
+          <th class="text-nowrap bd-highlight" id="source">source</th>
+          <th class="text-nowrap bd-highlight" id="description">description</th>
+          <th class="text-nowrap bd-highlight" id="component_type">Type de composant</th>          
+          <th class="text-nowrap bd-highlight" id="trade">Métier</th>
+          <th class="text-nowrap bd-highlight" id="function">Fonction</th>
+          <th class="text-nowrap bd-highlight" id="lot">lot</th>
+          <th class="text-nowrap bd-highlight" id="room">Local</th>          
+          <th class="text-nowrap bd-highlight" id="code_client_object">** code_client_object **</th>
+          <th class="text-nowrap bd-highlight" id="code_fournisseur">Code fournisseur</th>
+          <th class="text-nowrap bd-highlight" id="facteur_choc">Facteur de choc</th> 
+          <th class="text-nowrap bd-highlight" id="degre_choc">Dégre choc</th>
+          <th class="text-nowrap bd-highlight" id="avec_plots">Avec plots</th>               
+          <th class="text-nowrap bd-highlight" id="avec_carlingage">Avec carlingage</th>
+          <th class="text-nowrap bd-highlight" id="creation_date">Date de création</th>
+          <th class="text-nowrap bd-highlight" id="date_last_modified">Date de modification</th>          
+        </tr>
+      </thead>   
+    <tbody>
+      {% for  e in tables_consolide %}
+      <tr>
+        <th scope="row">{{e.id}}</td>        
+        <td class="text-nowrap bd-highlight">{{e.name}}</td>
+        <td class="text-nowrap bd-highlight">{{e.source}}</td>
+        <td class="text-nowrap bd-highlight">{{e.description}}</td>
+        <td class="text-nowrap bd-highlight">{{e.component_type}}</td>        
+        <td class="text-nowrap bd-highlight">{{e.trade}}</td>
+        <td class="text-nowrap bd-highlight">{{e.function}}</td>
+        <td class="text-nowrap bd-highlight">{{e.lot|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.room}}</td>  
+        <td class="cell text-nowrap bd-highlight" data-config="{{e.generate_data_config}}">{{e.code_client_object|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.code_fournisseur|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.facteur_choc|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.degre_choc|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.avec_plots|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.avec_carlingage|default:""}}</td>
+        <td class="text-nowrap bd-highlight">{{e.creation_date}}</td>        
+        <td>{{e.date_last_modified_dc}}</td>      
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock%}
+{% block script %}
+<script>
+    ListOfSelectableValue = {{ checkSelection|safe }};   
+    $(document).ready(function(){ 
+      $('table').DataTable({         
+          paging: true,
+          searching: false, 
+          ordering: true,
+          autoWidth: true,          
+          language: {
+            paginate: {
+                first: "Premier",
+                last: "Dernier",
+                next: "Suivant",
+                previous: "Précédent",
+            },
+            lengthMenu: 'Afficher _MENU_ par page',
+            info: "Affichage de _START_ à _END_ sur _TOTAL_ entrées",
+            infoEmpty: "Aucune entrée disponible",
+            emptyTable: "Aucune donnée consolidée"
+            },
+            fixedColumns: {
+              left: 4
+        }           
+      });        
+      $('table thead th').click(function(e){
+            e.preventDefault();
+            var x = e.pageX - 15;
+            var y = e.pageY + 15;
+            var ckir = $(this).attr('id');            
+            $('form p, form div').each(function() {
+                var inputId = $(this).find('input').attr('id');
+                var findit = "_"+ ckir +"_";
+                if (inputId && inputId.includes(findit)) {
+                    $(this).show(); 
+                } else {
+                    $(this).hide();
+                };
+            });
+            $("#context-menu").css({
+                display: "block",
+                left: x,
+                top: y
+            });
+            return false;
+      });    
+      $('.cell').on('dblclick', function() {
+        console.log($(this).data('config'));
+          const config = $(this).data('config');
+          let formulaire = '';
+
+          config.forEach(function(champ) {
+              if (champ.typeinput === 'Regex') {
+                  let regex = new RegExp(champ.fieldvalue); 
+                  formulaire += `<input type="text" class="form-inline" value="${champ.valueExist}" pattern="${champ.fieldvalue}" placeholder="${champ.fieldvalue}"/> `;
+              }else if (champ.typeinput === 'Fixe'){                
+                formulaire += `<input type="text" class="form-inline" value="${champ.fieldvalue}" readonly/> `;              
+              } else if (champ.typeinput === 'select') {
+                  formulaire += `<select class='form-inline'/>`;
+                  champ.options.forEach(function(option) {
+                      const selected = option === champ.valueExist ? 'selected' : '';
+                      formulaire += `<option value="${option}" ${selected}>${option}</option>`;
+                  });
+                  formulaire += `</select> `;
+              }
+          });
+          $(this).html(formulaire);
+      });
+      $('td .cell').on('blur',function() {               
+            const inputs = $(this).find('input, select');
+            const valeurs = [];
+            inputs.each(function() {
+                valeurs.push($(this).val());
+            });                
+            const nouveauCode =  valeurs.join('');
+            $(this).text(nouveauCode);
+            /* check unicity  and load data to code details*/
+            
+        });
+
+        $("#addrow").on('click', function(){
+          alert('ajouter une line re recuper les input code client')
+        });
+        $("#initfilter").on('click', function(){
+          // calm
+          console.log('test');
+        });
+        
+    }); 
+    
+    
+    // scrollX: true,
+        // scrollY: 200
+     
+         
+      // console.log(ListOfSelectableValue);  
+      // $("table tbody td").on("click", function(){
+      //       const cellIndex = $(this).index();
+      //       const columnHeader = $('table thead th').eq(cellIndex)
+      //       const HeaderId = columnHeader.attr('id');           
+      //       ListDictValue = ListOfSelectableValue[HeaderId];
+      //       key_etat = HeaderId + "__etat";
+      //       key_id = HeaderId + "_id";
+      //       List2Select = [];
+      //       if (typeof(ListDictValue)!="undefined"){
+      //           ListDictValue.forEach(element => {
+      //               List2Select.push([element[key_id], element[key_etat]]);
+      //           });                    
+      //       }               
+      //       alert("vous avez clické sur la column " +  List2Select);
+      // }); 
+           
+   
+</script>
+{% endblock%}
