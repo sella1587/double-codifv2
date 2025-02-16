@@ -160,7 +160,7 @@ WSGI_APPLICATION = 'double_codification.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': config('DB_NAME', default='dev'),
+        'NAME': config('DB_NAME', default='v1'),
         'USER': config('DB_USER', default='postgres'),
         'PASSWORD': config('DB_PASSWORD', default='123456'),
         'HOST': config('DB_HOST', default='localhost'),
@@ -318,3 +318,5 @@ import logging
 logger = logging.getLogger("django_auth_ldap")
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
+
+

@@ -163,8 +163,8 @@ class ConsolidatedObjects(models.Model):
     status= models.CharField(max_length=1, null=True)
 
     #pour les input dans le cellule code_client
-    def render_code_client_ouvrage(self):
-        return self.code_client_ouvrage.lower()
+    def render_code_client_object(self):
+        return self.code_client_object.lower()
     
     def generate_data_config(self):       
         # parametrages = ParametrageChamp.objects.filter(colonne="Code Client").order_by("position")
@@ -236,7 +236,8 @@ class PropertyConsolidationParam (models.Model):
     """
     property_name = models.CharField(max_length=50, null=False, unique=True)
     source_priority = models.CharField(max_length=150, null=True)
-    display_mode = models.CharField(max_length=50, null=True)   
+    display_mode = models.CharField(max_length=50, null=True)
+    position_index = models.SmallIntegerField(null=True, blank=True)   
     class Meta:
         db_table = "property_consolidation_param"
         # managed = False

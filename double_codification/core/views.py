@@ -37,6 +37,8 @@ from django .shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
 from django.utils.dateparse import parse_datetime
+
+
 logger = logging.getLogger('core')
 
 class CustomLoginView(LoginView):
@@ -45,16 +47,21 @@ class CustomLoginView(LoginView):
 @login_required
 def home2(request):
     ouv= request.session['SelectedOuvrage'].lower()
-    with schema_context(ouv):   
+    with schema_context(ouv):
+        list_of_column = ["id"]
+        list_of_column.extend(PropertyConsolidationParam.objects.exclude(display_mode__iexact='no').values_list("property_name", flat=True).order_by('position_index')) 
+        list_of_column.extend(["creation_date","date_last_modified"])
+        print("----", list_of_column)        
         optionFacteurChoc = [element for element in FacteurChoc.objects.values('id', 'value').distinct().order_by('-id')]
         optionDegreChoc = [element for element in DegreChoc.objects.values('id', 'value').distinct().order_by('-id') ]
         optionavec_plots = [element for element in AvecPlot.objects.values('id', 'value').distinct().order_by('-id') ]
-        optionaavec_carlingage = [element for element in AvecCarlingage.objects.values('id', 'value').distinct().order_by('-id') ]
+        optionaavec_carlingage = [element for element in AvecCarlingage.objects.values('id', 'value').distinct().order_by('-id') ]       
         context = {
                 "facteur_choc" : optionFacteurChoc,
                 "degre_choc" : optionDegreChoc,
                 "avec_plots" : optionavec_plots,
-                "avec_carlingage" : optionaavec_carlingage
+                "avec_carlingage" : optionaavec_carlingage,
+                "listcolum": list_of_column
         }
         return render(request, 'pages/consolidation.html', context)
 
@@ -86,7 +93,8 @@ def index(request):
 def menu(request):
     user = request.user    
     groupes = user.groups.all()  
-    list_ouvrage = OuvrageGroupe.objects.filter(ouvrage__is_active=True, groupe__in=groupes).select_related('ouvrage').values("id", "ouvrage__description", "groupe__name", "color", "ouvrage", "ouvrage__type", "ouvrage__image")
+    # list_ouvrage = OuvrageGroupe.objects.filter(ouvrage__is_active=True, groupe__in=groupes).select_related('ouvrage').values("id", "ouvrage__description", "groupe__name", "color", "ouvrage", "ouvrage__type", "ouvrage__image")
+    list_ouvrage = OuvrageGroupe.objects.filter(ouvrage__is_active=True).select_related('ouvrage').values("id", "ouvrage__description", "groupe__name", "color", "ouvrage", "ouvrage__type", "ouvrage__image","ouvrage__schema_name")
     ouvrageSelected = request.GET.get('ouvrage')
     droit = request.GET.get('droit')  
     request.session['SelectedOuvrage'] = ouvrageSelected 
@@ -119,7 +127,8 @@ class ImportJsonView(APIView):
             Project = data['Project'].lower()
             Source = data['Source']
             dt_processing = datetime.strptime(data['DateTraitement'], "%Y%m%d%H%M%S")
-            # load datas sjon           
+            # load datas sjon
+            print('start loadind data to ', Project)          
             with schema_context(Project):
                 df_raw = pd.DataFrame(data["Datas"])
                 df_raw["source"] =  Source 
@@ -144,8 +153,10 @@ class ImportJsonView(APIView):
                 # merge_objects_from_json
                 df_raw = df_raw.where(pd.notnull(df_raw), None) 
                 list_of_dicts = df_raw.to_dict(orient='records') 
-                retour = merge_objects_from_json(list_of_dicts)
-                return Response({"message": "Data imported and flagged successfully", "data": retour}, status=status.HTTP_201_CREATED)
+                retour = merge_objects_from_json(list_of_dicts, Source)
+                # print(json.dumps({"resume": "traitement terminée", "data": retour}))
+                # ret = json.dumps({"resume": "traitement terminée", "data": retour})
+                return Response({"resume": "traitement terminée", "data": retour}, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             print(e)
@@ -165,10 +176,11 @@ class GetObjectConsolidated(APIView):
                             order_by=F('name').asc()
                         )
                     ).exclude(status='D').order_by('rank').values()
-                    ConsolidationRules = PropertyConsolidationParam.objects.values("property_name", "source_priority", "display_mode")                  
+                    ConsolidationRules = PropertyConsolidationParam.objects.exclude(display_mode__iexact='no').values("property_name", "source_priority", "display_mode")               
                     json_data = list(ObjectGrouper)
                     rules = list(ConsolidationRules)
-                    # lisofcol = [k['property_name'] for k in rules]                   
+                    # print(rules)
+                    lisofcol = [k['property_name'] for k in rules]                   
                     df_data = pd.DataFrame(json_data)                   
                     unique_values = df_data['rank'].unique()                                      
                     consolidate_row = []
@@ -217,8 +229,8 @@ class GetObjectConsolidated(APIView):
                             consolidate_row.append(row_consolide)
                     #load consolidation
                     ConsolidatedObjects.objects.bulk_create([ConsolidatedObjects(**t) for t in consolidate_row])
-                    #                   
-                    return Response({'datas': consolidate_row, 'ouvrage': ouvrage}, status=status.HTTP_200_OK)
+                    #  lisofcol                 
+                    return Response({'datas': consolidate_row, 'ouvrage': ouvrage, 'col_active': lisofcol}, status=status.HTTP_200_OK)
                 except Exception as e:
                     return Response ({'error':str(e)}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
@@ -271,87 +283,84 @@ class GetDatasForCao(APIView):
     def get(self, request, ouvrage, date):
         with schema_context(ouvrage.lower()):
             data = get_object_or_404(ObjectsFromCao, date_last_modified_dc__gt = date)
-            return Response({"datas": data}, status=status.HTTP_200_OK)
-        
-class CustomPagination(PageNumberPagination):   
-    page_size_query_param = 'length'   
-    page_query_param = 'start' 
-    page_size = 10
-    
-    def get_page_number(self, request, paginator):
-        """
-        Cette méthode est nécessaire pour convertir le paramètre 'start' (utilisé par DataTables)
-        en numéro de page correct pour la pagination.
-        """
-        page_size = self.get_page_size(request)
-        start = int(request.GET.get(self.page_query_param, 0))  # Valeur de 'start' par défaut à 0
-        page_number = start // page_size + 1  # Calcul du numéro de page
-        return page_number
+            return Response({"datas": data}, status=status.HTTP_200_OK)        
+
+
+from rest_framework.pagination import LimitOffsetPagination
+class CustomPagination(LimitOffsetPagination):
+    default_limit = 10  # Nombre d'éléments par page
+    limit_query_param = 'length'  # Correspond à "length" de DataTables
+    offset_query_param = 'start'  # Correspond à "start" de DataTables
+
+
 
 class ConsolidatedObjectsView(APIView):
     def get(self, request):
-        draw = int(request.GET.get('draw', 1))
-        start = int(request.GET.get('start', 0))
+        draw = int(request.GET.get('draw', 1))     
         length = int(request.GET.get('length', 10))
         column_index = int(request.GET.get('order[0][column]', 0))
         column_name = request.GET.get(f'columns[{column_index}][data]', 'id')
+               
         order_dir = request.GET.get('order[0][dir]', 'asc')
+
         ouvrage = request.GET.get('ouvrage')
         if not ouvrage:
             return Response({"error": "Ouvrage is required"}, status=400)
+
         filters = Q()
-        filter_fields = [
-            "name", "source", "description", "component_type",
-            "trade", "function", "lot", "room",
-            "code_client_object", "code_fournisseur","date_creation","last_date_modified"
-        ]
+
+        # Liste des champs filtrables
+        with schema_context(ouvrage.lower()):
+            filter_fields = PropertyConsolidationParam.objects.exclude(display_mode__iexact='no').values_list("property_name", flat=True).order_by('position_index')
+            
+        
+        # Appliquer les filtres
         for field in filter_fields:
             search_value = request.GET.get(f"{field}-search", None)
             start_with_value = request.GET.get(f"{field}-start-with", None)
-            end_with_value = request.GET.get(f"{field}-end-with", None)
             not_contain_value = request.GET.get(f"{field}-not-contain", None)
             not_start_with_value = request.GET.get(f"{field}-not-start-with", None)
-            not_end_with_value = request.GET.get(f"{field}-not-end-with", None)
-            checkbox_values = request.GET.getlist(f"{field}-checkbox[]") 
+            checkbox_values = request.GET.getlist(f"{field}-checkbox[]")  # Liste des cases cochées
+            
+
             if search_value:
                 filters &= Q(**{f"{field}__icontains": search_value})
 
             if start_with_value:
                 filters &= Q(**{f"{field}__istartswith": start_with_value})
-            if end_with_value:
-                filters &= Q(**{f"{field}__iendswith": end_with_value})
-            if not_end_with_value:
-                filters &= ~Q(**{f"{field}__iendswith": not_end_with_value})
 
             if not_contain_value:
-                filters &= ~Q(**{f"{field}__icontains": not_contain_value}) 
+                filters &= ~Q(**{f"{field}__icontains": not_contain_value})  # Exclure la valeur
 
             if not_start_with_value:
-                filters &= ~Q(**{f"{field}__istartswith": not_start_with_value}) 
+                filters &= ~Q(**{f"{field}__istartswith": not_start_with_value})  # Exclure la valeur
 
             if checkbox_values:
-                filters &= Q(**{f"{field}__in": checkbox_values}) 
-
+                filters &= Q(**{f"{field}__in": checkbox_values})  # Filtrer selon les cases cochées
+        filters &= ~Q(**{"status__iexact": "D"})
         with schema_context(ouvrage.lower()):
-            queryset = ConsolidatedObjects.objects.filter(filters)            
-            total_records = queryset.count()            
-            queryset = queryset.order_by(column_name if order_dir == 'asc' else f'-{column_name}')         
+            list_of_column = ["id"]
+            list_of_column.extend(PropertyConsolidationParam.objects.exclude(display_mode__iexact='no').values_list("property_name", flat=True).order_by('position_index')) 
+            list_of_column.extend(["creation_date"])
+            print("---------------------", list_of_column, "------------------------------")
+            queryset = ConsolidatedObjects.objects.select_related("facteur_choc","degre_choc", "avec_plots","avec_carlingage").filter(filters).only(*list_of_column)
+            print(queryset.query)          
+            total_records = queryset.count()
+            # Tri
+            queryset = queryset.order_by(column_name if order_dir == 'asc' else f'-{column_name}')
+
+            # Pagination
             paginator = CustomPagination()
             paginator.page_size = length
             paginated_queryset = paginator.paginate_queryset(queryset, request)
-
+            # 
+            list_of_column.append("generate_data_config")          
             serializer = DynamicConsolidatedObjectsSerializer(
                 paginated_queryset or [],
                 many=True,
-                fields=[
-                    "id", "name", "source", "description", "component_type",
-                    "trade", "function", "lot", "room", "code_client_object",
-                    "code_fournisseur", "facteur_choc", "degre_choc",
-                    "avec_plots", "avec_carlingage", "creation_date",
-                    "date_last_modified", "generate_data_config"
-                ]
+                fields=list_of_column
             )
-
+           
             return Response({
                 "draw": draw,
                 "recordsTotal": total_records,
@@ -492,8 +501,7 @@ class LoadOwnerCodeDetails(APIView):
         print(datas)
         updated_entries = [] 
         created_entries = []
-        for data in datas:
-            print("----", data)
+        for data in datas:            
             objconso_id = data.get("objconso")
             ouvrage = data.get("ouvrage")
             data_entries = data.get("data", [])

@@ -5,6 +5,13 @@ from .models import OwnerCodeDetails, OwnerCodeProperties
 class DynamicConsolidatedObjectsSerializer(serializers.ModelSerializer):
     generate_data_config = serializers.SerializerMethodField()
     render_code_client_ouvrage = serializers.SerializerMethodField()
+
+    # Définition explicite des champs relationnels
+    facteur_choc = serializers.StringRelatedField()
+    degre_choc = serializers.StringRelatedField()
+    avec_plots = serializers.StringRelatedField()
+    avec_carlingage = serializers.StringRelatedField()
+
     def __init__(self, *args, **kwargs):
         fields_to_include = kwargs.pop('fields', None)
         super().__init__(*args, **kwargs)
@@ -18,12 +25,13 @@ class DynamicConsolidatedObjectsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsolidatedObjects
         fields = '__all__'
-        
-    def get_generate_data_config(self, obj):        
+
+    def get_generate_data_config(self, obj):
         return obj.generate_data_config()
     
     def get_render_code_client_ouvrage(self, obj):
-        return obj.render_code_client_ouvrage()
+        return obj.render_code_client_object()
+
 
 
 class SerialObjectFromCao(serializers.ModelSerializer):

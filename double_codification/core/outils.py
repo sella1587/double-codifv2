@@ -25,22 +25,20 @@ def bulk_insert_with_logging(model, data):
 
 
 
-def merge_objects_from_json(source_data):
+def merge_objects_from_json(source_data, source):
     """
     Fonction qui effectue le traitement de fusion :
     - Met à jour les objets existants
     - Insère les nouveaux objets
     - Flague les objets absents
     """
-
-    # Récupérer les UIDs de la source
     source_uids = {item['uid'] for item in source_data}
-    TargetData = ObjectsFromCao.objects.select_related("facteur_choc", "degre_choc", "avec_plots", "avec_carlingage").all()    
+    TargetData = ObjectsFromCao.objects.select_related("facteur_choc", "degre_choc", "avec_plots", "avec_carlingage").filter(source__iexact=source).all()    
     targetList = {f.uid for f in TargetData}
     ToUpdateInTarget = source_uids.intersection(targetList)
     ToInsertInTarget = source_uids - targetList    
     ToFlaged = targetList - source_uids  
-    
+    error = []
     #insertion
     for item in source_data:
         if item['uid'] in ToInsertInTarget:
@@ -62,14 +60,16 @@ def merge_objects_from_json(source_data):
                         avec_plots = AvecPlot.objects.get(value=item.get('avec_plots')),
                         avec_carlingage = AvecCarlingage.objects.get(value=item.get('avec_carlingage')),
                         date_traitement_cao = item.get('dt_processing'),
-                        creation_date=now(),                      
+                        creation_date=now(),
+                        date_last_modified =now(),                   
                         status='A'
                     )                    
                 ]    
                 ObjectsFromCao.objects.bulk_create(new_objects, ignore_conflicts=True)
             except Exception as e:
                 #logger l'erreur et continue
-                print(e)
+                error.append({"error": e, "uid": item['uid']})
+                print(e, 'pour uid', item['uid'])
    
     #update
     existing_objects = TargetData.filter(uid__in =ToUpdateInTarget).all()
@@ -101,13 +101,14 @@ def merge_objects_from_json(source_data):
         catalogue = ["facteur_choc","degre_choc","avec_plots","avec_carlingage"]
         uid = obj['uid']
         colcle = key_for_target_empty + catalogue 
-        for k in key_fonc:
+        for k in key_fonc:            
             if datas[k] != obj[k] and str(datas[k]).lower() != 'none':
                 obj2update[k] = datas[k]
 
-        for y in colcle:
-            if (obj[y] == None or str(obj[y]).lower() == 'none' or str(obj[y]).strip()=='') and obj[y] !='code_client_object':
-                obj2update[y] = datas[y]
+        for y in colcle:           
+            if (obj[y] == None or str(obj[y]).lower() == 'none' or str(obj[y]).strip()=='') and y !='code_client_object':
+                if obj[y] != datas[y]:
+                    obj2update[y] = datas[y]
 
         concat_target = "".join([str(datas[c]) for c in colcle])
         contact_source = "".join([str(obj[c]) for c in colcle])
@@ -130,7 +131,7 @@ def merge_objects_from_json(source_data):
                         obj2update[key] = model.objects.get(value=obj2update[key]).id 
                 ObjectsFromCao.objects.filter(uid=uid).update(**obj2update)
             except Exception as e:
-                print({"erreur": "ERR-06", "uid": uid})
+                error.append({"erreur": "ERR-06", "uid": uid})
                 #log ici
     for u in ToFlaged:
         try:
@@ -138,6 +139,6 @@ def merge_objects_from_json(source_data):
             uid=u
         ).update(date_last_modified=date.today(), status='D')
         except Exception as e:
-            print({"erreur": "ERR-07", "uid": uid})            
-    return {"ToFlaged": ToFlaged}
+            error.append({"erreur": "ERR-07", "uid": uid, "message": e})            
+    return {"proc_status": error}
 

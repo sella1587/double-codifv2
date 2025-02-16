@@ -190,28 +190,25 @@
 {% endblock %}
 {% block content%}
 <br>
-
+{{ listcolum }}
 <div id="tbodydiv">      
     <table class="table table-hover table-striped" id="tableconsolide" width="100%">
       <thead>      
         <tr>
-          <th class="bd-highlight" id="id" data-column="id" style="width: 5px!important;">id</th>                 
-          <th id="name" data-column="name" data-type="text" data-group="text">Repère fonctionnel🔽</th>
-          <th id="source" data-column="source" data-type="text" data-group="text"> Source <span style="cursor: pointer;">🔽</span></th>
-          <th id="description" data-column="description" data-type="text" data-group="text">Description <span style="cursor: pointer;">🔽</span></th>
-          <th id="component_type" data-column="component_type" data-type="text" data-group="text">Type de composant <span style="cursor: pointer;">🔽</span></th>          
-          <th id="trade" data-column="trade" data-type="text" data-group="text">Métier <span style="cursor: pointer;">🔽</span></th>
-          <th id="function" data-column="function" data-type="text" data-group="text">Fonction <span style="cursor: pointer;">🔽</span></th>
-          <th id="lot" data-column="lot" data-type="text" data-group="text">Lot <span style="cursor: pointer;">🔽</span></th>
-          <th id="room" data-column="room" data-type="text" data-group="text">Local <span style="cursor: pointer;">🔽</span></th>          
-          <th id="code_client_object" data-column="code_client_object" data-type="text" data-group="text">** code_client_object ** <span style="cursor: pointer;">🔽</span></th>
-          <th id="code_fournisseur" data-column="code_fournisseur" data-type="fixe" data-group="fixed">Code fournisseur <span style="cursor: pointer;">🔽</span></th>
-          <th id="facteur_choc" data-column="facteur_choc" data-type="fixefacteur" data-group="fixed">Facteur de choc <span style="cursor: pointer;">🔽</span></th> 
-          <th id="degre_choc" data-column="degre_choc" data-type="fixedegre" data-group="fixed">Dégre choc <span style="cursor: pointer;">🔽</span></th>
-          <th id="avec_plots" data-column="avec_plots" data-type="fixeplots" data-group="fixed">Avec plots <span style="cursor: pointer;">🔽</span></th>               
-          <th id="avec_carlingage" data-column="avec_carlingage" data-type="fixecarlingage" data-group="fixed">Avec carlingage <span style="cursor: pointer;">🔽</span></th>
-          <th id="creation_date" data-column="creation_date" data-type="date" data-group="date">Date de création <span style="cursor: pointer;">🔽</span></th>
-          <th id="date_last_modified" data-column="date_last_modified" data-type="date" data-group="date">Date de modification <span style="cursor: pointer;">🔽</span></th>          
+          {% for entete in listcolum %}
+            {% if entete == "date_creation" or entete == "last_date_modified"  %}
+                <th id="{{entete}}" data-column="{{entete}}" data-type="date" data-group="date">{{entete}}<span style="cursor: pointer;">🔽</span></th> 
+            {% elif entete == 'id' %}
+                <th class="bd-highlight" id="id" data-column="id" style="width: 5px!important;">id</th>
+            {% elif entete == 'code_fourniseur' %}
+                <th id="{{entete}}" data-column="{{entete}}" data-type="fixe" data-group="fixed">{{entete}}<span style="cursor: pointer;">🔽</span></th>
+            {% elif entete == 'facteur_choc_id' or entete == 'degre_choc_id' or entete == 'avec_plots_id' or entete == 'avec_carlingage_id' %}
+                <th id="{{entete}}" data-column="{{entete}}" data-type="fixe-{{entete}}" data-group="fixed">fixe-{{entete}}<span style="cursor: pointer;">🔽</span></th>
+            {% else %}
+                <th id="{{entete}}" data-column="{{entete}}" data-type="text" data-group="text"> {{entete}} <span style="cursor: pointer;">🔽</span></th>
+            {% endif %}
+
+          {% endfor %}                   
         </tr>
         </thead>
     <tbody>      
@@ -238,7 +235,8 @@
           searching: false,       
           autoWidth: false,               
           ajax: function(data, callback, settings) {
-            let filters = {};    
+            let filters = {};
+            console.log(data);  
             $('#tableconsolide thead th').each(function () {
                 let column = $(this).attr('data-column'); 
                 let filterMenu = $(this).find('.filter-menu');    
@@ -268,21 +266,23 @@
                   ...filters
               },
               success: function(response) {
-                
+                  console.log(response)
                   callback(response);
               }
           });
           },
           "columns": [            
                 { "data": "id" },
-                { "data": "name" },
                 { "data": "source" },
+                { "data": "name" },
+                
+                { "data": "component_type","className": "text-nowrap bd-highlight" },
                 { 
                     "data": "description",
                     "className": "",
                     "width": "5px"
                 },
-                { "data": "component_type","className": "text-nowrap bd-highlight" },
+               
                 { "data": "trade","className": "text-nowrap bd-highlight"  },
                 { "data": "function","className": "text-nowrap bd-highlight"  },
                 { "data": "lot" ,"className": "text-nowrap bd-highlight" },
@@ -298,8 +298,7 @@
                     }          
                     $(td).addClass("cell text-nowrap bd-highlight").attr("data-config", configValue);
                   }
-                },
-                { "data": "code_fournisseur","className": "text-nowrap bd-highlight"  },
+                },               
                 { "data": "facteur_choc","className": "text-nowrap bd-highlight" ,"width": "75px" },
                 { "data": "degre_choc","className": "text-nowrap bd-highlight" },
                 { "data": "avec_plots","className": "text-nowrap bd-highlight" },
@@ -371,7 +370,8 @@
             emptyTable: "Aucune donnée consolidée"
             },
               initComplete: function () {
-              setupFilters(this.api());
+                console.log('tetet');
+              //setupFilters(this.api());
           }
 
             
@@ -399,7 +399,7 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
                   let regex = new RegExp(pattern);
                   if (regex.test($(this).val().trim()) == false)
                   {
-                      flag_pattern.push('e')
+                    flag_pattern.push('e')
                   } 
                 }
                 if (flag_pattern.includes('e')){
@@ -430,22 +430,7 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
                 objconso: id, 
                 ouvrage: "{{request.session.SelectedOuvrage|safe}}",
                 data: parsedData                  
-            });
-            if (dataUpdates.length > 0) {          
-
-            //Envoi AJAX des données en une seule requête
-            $.ajax({
-                url: "{% url 'insertOwnerCode' %}", 
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(dataUpdates), 
-                dataType: "json",             
-                error: function(xhr, status, error) {
-                    console.error("Erreur :", xhr.responseText);
-                    alert("Erreur lors de l'envoi des données !");
-                }
-            });
-        }
+            });            
             cell.addClass("valeurEngras");
             cell.removeClass('selected');
             selectedCells.clear()
@@ -453,7 +438,7 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
                          
         });  
 
-    }, 500);   
+    }, 500);    
     
 });
 
@@ -583,11 +568,7 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
                 <div class="input-group mb-3">
                     <input type="text" class="form-control search-input" placeholder="Recherche..." aria-label="Recherche" aria-describedby="basic-addon2">
                     <span class="input-group-text" id="basic-addon2">🔍</span>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input toggle-select" type="checkbox" id="toggle-select" checked style="width:25px; heigth:25px">
-                    <label class="form-check-label" for="toggle-select" style="font-size:xx-small">Tout sélectionner / désélectionner</label>
-                </div>
+                </div>                
                 <br>
                 <div class="checkbox-container form-check mb-3"></div>
                 <input type="text" class="form-control start-with-input" placeholder="Commence par...">
@@ -606,6 +587,7 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
         } else if (columnType === 'fixed') {
             let selectBox = $('<select multiple class="form-control fixed-select"></select>');
             column.data().unique().sort().each(function (d) {
+                
                 selectBox.append(`<option value="${d}">${d}</option>`);
             });
             filterMenu.append(selectBox);
@@ -643,9 +625,9 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
         filterMenu.on('click', function (e) {
             e.stopPropagation();
         });
-
+        /* miala eto ela aveo*/
         filterMenu.find('.toggle-select').on('change', function () {
-            let isChecked = $(this).prop('checked');
+           let isChecked = $(this).prop('checked');
             filterMenu.find('.filter-option').prop('checked', isChecked);
         });
 
@@ -669,39 +651,45 @@ $('#tableconsolide').on('blur', '.input-cell', function() {
 
         function applyFilters() {
             let filterQuery = {};
-
+        
             if (columnType === 'text') {
-                let searchValue = filterMenu.find('.search-input').val();
-                let startWithValue = filterMenu.find('.start-with-input').val();
-                let notContainValue = filterMenu.find('.not-contain-input').val();
-                let notStartWithValue = filterMenu.find('.not-start-with-input').val();
+                let searchValue = filterMenu.find('.search-input').val().trim();
+                let startWithValue = filterMenu.find('.start-with-input').val().trim();
+                let notContainValue = filterMenu.find('.not-contain-input').val().trim();
+                let notStartWithValue = filterMenu.find('.not-start-with-input').val().trim();
                 let checkedValues = filterMenu.find('.filter-option:checked').map(function () { return $(this).val(); }).get();
-                
-                if (searchValue) filterQuery[columnData] = searchValue;
-                if (startWithValue) filterQuery[columnData] = "^" + startWithValue;
-                if (notStartWithValue) filterQuery[columnData] = "^(?!" + notStartWithValue + ")";
-                if (notContainValue) filterQuery[columnData] = "^(?!.*" + notContainValue + ").*$";
-                if (checkedValues.length > 0) filterQuery[columnData] = checkedValues;
-                let hasFilters = searchValue || startWithValue || notContainValue || notStartWithValue || checkedValues.length > 0
-
+              
+        
+                if (searchValue) filterQuery[columnData + "-search"] = searchValue;
+                if (startWithValue) filterQuery[columnData + "-start-with"] = startWithValue;
+                if (notContainValue) filterQuery[columnData + "-not-contain"] = notContainValue;
+                if (notStartWithValue) filterQuery[columnData + "-not-start-with"] = notStartWithValue;
+                if (checkedValues.length > 0) filterQuery[columnData + "-checkbox[]"] = checkedValues;
+            } 
+            else if (columnType === 'date') {
+                let minDate = filterMenu.find('.min-date-input').val();
+                let maxDate = filterMenu.find('.max-date-input').val();
+                if (minDate) filterQuery[columnData + "-start-with"] = minDate;
+                if (maxDate) filterQuery[columnData + "-end-with"] = maxDate;
+            } 
+            else if (columnType === 'fixed') {
+                let selectedValues = filterMenu.find('.fixed-select').val();
+                if (selectedValues && selectedValues.length > 0) filterQuery[columnData + "-checkbox[]"] = selectedValues;
+            }
+        
+            // Vérifier si au moins un filtre est actif
+            let hasFilters = Object.keys(filterQuery).length > 0;
+        
             if (hasFilters) {
                 filterButton.find('.filter-icon').show();
             } else {
                 filterButton.find('.filter-icon').hide();
             }
-
-            } else if (columnType === 'date') {
-                let minDate = filterMenu.find('.min-date-input').val();
-                let maxDate = filterMenu.find('.max-date-input').val();
-                if (minDate) filterQuery[columnData] = ">=" + minDate;
-                if (maxDate) filterQuery[columnData] = "<=" + maxDate;
-            } else if (columnType === 'fixed') {
-                let selectedValues = filterMenu.find('.fixed-select').val();
-                if (selectedValues && selectedValues.length > 0) filterQuery[columnData] = selectedValues;
-            }
-
+        
+            // Mise à jour de DataTables avec les filtres actifs
             api.ajax.reload(null, false);
         }
+        
     });
 }
 
@@ -747,7 +735,7 @@ function makeColumnsEditable(editableColumns) {
         // ajouter un apel api qui recuperer les element des table facteur choc, degre choc, ....
         let currentValue = cell.text().trim();
         let inputElement = ""
-        if (columnType === 'fixefacteur'){
+        if (columnType == 'fixe-facteur_choc_id'){
             inputElement = `<select class="edit-input form-control">           
                 <option value=""></option>
                 <option value="K0">K0</option>
@@ -756,7 +744,7 @@ function makeColumnsEditable(editableColumns) {
                 <option value="K3">K3</option>
             </select>`
         }
-        if (columnType === 'fixedegre'){
+        if (columnType === 'fixe-degre_choc_id'){
             inputElement = `<select class="edit-input form-control">           
                 <option value=""></option>
                 <option value="D1">D1</option>
@@ -764,14 +752,14 @@ function makeColumnsEditable(editableColumns) {
                 <option value="D3">D3</option>              
             </select>`;
         }
-        if (columnType === 'fixeplots'){
+        if (columnType === 'fixe-avec_plots_id'){
             inputElement = `<select class="edit-input form-control">           
                 <option value=""></option>
                 <option value="OUI">OUI</option>
                 <option value="NON">NON</option>                         
             </select>`;
         }
-        if (columnType === 'fixecarlingage'){
+        if (columnType === 'fixe-avec_carlingage_id'){
             inputElement = `<select class="edit-input form-control">           
                 <option value=""></option>
                 <option value="OUI">OUI</option>
@@ -806,13 +794,29 @@ function makeColumnsEditable(editableColumns) {
         
     });
 }
-makeColumnsEditable(["facteur_choc", "degre_choc","avec_plots", "avec_carlingage"]); 
+makeColumnsEditable(["facteur_choc_id", "degre_choc_id","avec_plots_id", "avec_carlingage_id"]); 
 
   /* end edition */
 
 $('#saveData').on('click', function(){
-  alert('save data clicked');
-  console.log(data_modifier);
+    console.log("************", dataUpdates, "****************");
+    if (dataUpdates.length > 0) { 
+        $.ajax({
+            url: "{% url 'insertOwnerCode' %}", 
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(dataUpdates), 
+            dataType: "json",
+            success: function(response) {                
+                $('#tableconsolide').DataTable().ajax.reload(null, false);
+                dataUpdates = []
+            },           
+            error: function(xhr, status, error) {
+                console.error("Erreur :", xhr.responseText);
+                alert("Erreur lors de l'envoi des données !");
+            }
+        });
+    }  
 })
 
 

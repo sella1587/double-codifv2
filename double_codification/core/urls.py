@@ -4,7 +4,7 @@ from .views import ImportJsonView
 from .views import check_code_client_exists
 from .views import CheckNameUnicity
 from .views import ConsolidatedObjectsView, filtered_objects,update_objects
-from .views import AddNewLigneConsolidated, LoadOwnerCodeDetails
+from .views import AddNewLigneConsolidated, LoadOwnerCodeDetails, GetObjectConsolidated
 from django.contrib.auth import views as auth_views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -23,4 +23,5 @@ urlpatterns = [
     path('addNewLigneConsolide', AddNewLigneConsolidated.as_view(), name='add-row'),
     path('loadCodeDetails', LoadOwnerCodeDetails.as_view(), name='insertOwnerCode'),
     path('getCatalogue', GetCatalogData.as_view(), name='getcatalogue'),
+    path('ConsolidateDatas', GetObjectConsolidated.as_view(), name='consolidation')
 ]
